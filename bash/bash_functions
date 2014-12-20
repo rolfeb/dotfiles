@@ -1,0 +1,107 @@
+#
+# $Header: $
+#
+# Standard functions for maintaining a colon-separated directory path
+# variable.  These ensure that a component is only added if: 1) it actually
+# exists as a directory, and 2) it is not already present in the path.
+#
+# e.g.
+#	% echo $PATH
+#	/usr/bin:/bin
+#	% prefix_path PATH /usr/local/bin
+#	% echo $PATH
+#	/usr/local/bin:/usr/bin:/bin
+#
+prefix_path()
+{
+	var="$1"
+	cpt="$2"
+
+	[ -d $cpt ] || return
+
+	eval xpath=\$$var
+
+	expr ":$xpath:" : ".*:$cpt:" >/dev/null	&& return
+
+	eval $var=$cpt${xpath:+:$xpath}
+	eval export $var
+
+	unset var cpt xpath
+}
+
+append_path()
+{
+	var="$1"
+	cpt="$2"
+
+	[ -d $cpt ] || return
+
+	eval xpath=\$$var
+
+	/usr/bin/expr ":$xpath:" : ".*:$cpt:" >/dev/null	&& return;
+
+	eval $var=${xpath:+$xpath:}$cpt
+	export $var
+
+	unset var cpt xpath
+}
+
+remove_path()
+{
+	var=$1
+	cpt=$2
+
+	eval xpath=\$$var
+
+	[ $cpt = "." ] && cpt='\.'
+
+	while expr ":$xpath:" : ".*:$cpt:.*" >/dev/null
+	do
+		pref=`expr ":$xpath:" : "\(.*\):$cpt:.*"`
+		suff=`expr ":$xpath:" : ".*:$cpt:\(.*\)"`
+
+		xpath=`expr "$pref:$suff" : ':\(.*\):'`
+	done
+
+	eval $var=$xpath
+	export $var
+
+	unset var cpt xpath
+}
+
+append_tree()
+{
+	dir=$1
+
+	if [ -d $dir/bin ]
+	then
+		append_path PATH $dir/bin
+	else
+		append_path PATH $dir
+	fi
+	append_path MANPATH $dir/man
+
+	sh -c "/bin/ls $dir/lib/*.so >/dev/null 2>/dev/null" \
+		&& append_path LD_LIBRARY_PATH $dir/lib
+
+	unset dir
+}
+
+prefix_tree()
+{
+	dir=$1
+
+	if [ -d $dir/bin ]
+	then
+		prefix_path PATH $dir/bin
+	else
+		prefix_path PATH $dir
+	fi
+	prefix_path MANPATH $dir/man
+	prefix_path INFOPATH $dir/info
+
+	sh -c "/bin/ls $dir/lib/*.so >/dev/null 2>/dev/null" \
+		&& prefix_path LD_LIBRARY_PATH $dir/lib
+
+	unset dir
+}

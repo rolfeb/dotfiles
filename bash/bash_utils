@@ -1,0 +1,247 @@
+#
+# /usr/local/share/etc/bash_profile
+#
+
+#
+# Standard functions
+#
+. $HOME/.bash_functions
+
+#
+# Genamap-related stuff
+#
+gena()
+{
+	local env=$1
+
+	if [ -z "$env" ]
+	then
+		echo "Current GENA: $GENA"
+		return
+	fi
+
+	#
+	# Configure new environment
+	#
+	[ "$env" = map80 ] && env=map_8_0
+	[ "$env" = map81 ] && env=map_8_1
+	[ "$env" = devel ] && env=master
+	[ "$env" = 80 ] && env=8.0
+	[ "$env" = 81 ] && env=8.1
+	[ "$env" = 811 ] && env=8.1.1
+	[ "$env" = 21 ] && env=2.1
+
+	p=
+	[ "$env" = map_8_0 ] && p=dev80
+	[ "$env" = map_8_1 ] && p=dev81
+	[ "$env" = master ] && p=rolfe
+
+	new_P=
+	if [ -d "/gena/devel/$env" ]
+	then
+		#
+		# Use the build tree
+		#
+		export new_GENA=/gena/devel/$env
+		export new_GISRUN=$new_GENA/old/map
+		export new_P=/gena/devel/$p
+	
+	elif [ -d "/gena/run/$env" ]
+	then
+		#
+		# Use the Genaware run tree
+		#
+		export new_GENA=/gena/run/$env
+		export new_GISRUN=$new_GENA/map
+
+	elif [ -d "/opt/gena/$env" ]
+	then
+		export new_GENA=/opt/gena/$env
+		export new_GISRUN=$new_GENA/map
+
+	elif [ -d "/gena/release/$env" ]
+	then
+		#
+		# Use the local release tree
+		#
+		export new_GENA=/gena/release/$env
+		export new_GISRUN=$new_GENA/map
+	else
+		echo "unrecognised environment: $env"
+		unset new_P
+		unset p
+		unset env
+		return
+	fi
+
+	#
+	# Remove previous configuration
+	#
+	if [ "$GENA" ]
+	then
+		remove_path PATH $GENA/devtools/bin
+		remove_path PATH $GENA/bin
+		remove_path PATH $GENA/old/bin
+		remove_path PATH $GENA/old/map/bin
+		remove_path PATH $GENA/map/bin
+		remove_path LD_LIBRARY_PATH $GENA/lib
+		remove_path LD_LIBRARY_PATH $GENA/old/lib
+		remove_path LD_LIBRARY_PATH $GENA/old/map/lib
+		remove_path MANPATH $GENA/man
+		remove_path MANPATH $GENA/old/man
+
+		remove_path RASTER_ACC_PATH $GENA/raccessor
+	fi
+
+	if [ "$P" ]
+	then
+		remove_path PATH $P/devtools/bin
+		remove_path PATH $P/bin
+		remove_path PATH $P/old/bin
+		remove_path PATH $P/old/map/bin
+		remove_path LD_LIBRARY_PATH $P/lib
+		remove_path LD_LIBRARY_PATH $P/old/lib
+		remove_path LD_LIBRARY_PATH $P/old/map/lib
+
+		remove_path RASTER_ACC_PATH $P/raccessor
+
+		unset P
+	fi
+
+	#
+	# Create new environment
+	#
+	export GENA=$new_GENA
+	export GISRUN=$new_GISRUN
+	[ "$new_P" ] && export P=$new_P
+
+	unset new_GENA
+	unset new_GISRUN
+	unset new_P
+
+	if [ "$P" ]
+	then
+		prefix_path PATH $P/devtools/bin
+		prefix_path PATH $P/bin
+		prefix_path PATH $P/old/bin
+		prefix_path PATH $P/old/map/bin
+		prefix_path LD_LIBRARY_PATH $P/lib
+
+		prefix_path RASTER_ACC_PATH $P/raccessor
+	fi
+
+	#
+	# Common settings
+	#
+	append_path PATH $GENA/devtools/bin
+	append_path PATH $GENA/bin
+	append_path PATH $GENA/old/bin
+	append_path PATH $GISRUN/bin
+
+	append_path LD_LIBRARY_PATH $GISRUN/lib
+	append_path LD_LIBRARY_PATH $GENA/lib
+	append_path LD_LIBRARY_PATH $GENA/old/lib
+
+	append_path MANPATH $GENA/man
+	append_path MANPATH $GENA/old/man
+	append_path MANPATH $TETEX/man
+
+	export TETEX=/usr/share
+	export TEXMF=$TETEX/texmf
+	export TEXINPUTS=.:$GENA/texmf/tex//:$TEXMF/tex//:$TEXMF/pdftex//
+	export TEXFONTS=.:$GENA/texmf/fonts//tfm:$TEXMF/fonts//
+
+	export WINDOWID=123
+
+	OS="`/bin/uname -s`"
+	case "$OS" in
+	Linux)
+		export SERIES=LINUX-x86
+		;;
+	AIX)
+		export LIBPATH=$LD_LIBRARY_PATH
+		;;
+	esac
+
+	echo "Current GENA: $GENA"
+
+}
+
+#
+# Define standard environment
+#
+prefix_path PATH /bin
+prefix_path PATH /usr/bin
+append_path PATH /usr/local/bin
+append_path PATH /usr/local/share/bin
+append_path PATH /usr/X11R6/bin
+
+[ -d $HOME/bin ] && prefix_path PATH $HOME/bin
+
+append_path LD_LIBRARY_PATH /usr/local/lib
+
+append_path MANPATH /usr/man
+append_path MANPATH /usr/local/man
+append_path MANPATH /usr/X11R6/man
+append_path MANPATH /usr/lib/perl5/man
+append_path MANPATH /usr/local/share/man
+
+if [ -w / ]
+then
+	# only for root!
+	prefix_path PATH /sbin
+	prefix_path PATH /usr/sbin
+else
+	# not for root!
+	append_path PATH .
+fi
+
+#
+# Common settings
+#
+export LESS=ems
+export PAGER=less
+export EDITOR=vi
+export PS1="[\u@\h \W]\\$ "
+export USERNAME=""
+export IGNOREEOF=2
+
+#
+# Miscellaneous
+#
+umask 002
+
+unset USERNAME
+unset MAILCHECK
+
+#
+# Standard aliases and functions
+#
+alias j="jobs"
+alias m="less"
+alias cls=clear
+alias pg='fg %-'
+alias po=popd
+alias pu=pushd
+alias d=dirs
+alias stop='kill -TSTP'
+unalias ls
+
+function l { ls -las "$@" | less; }
+
+#
+# Terminal settings, if appropriate
+#
+if [ -t 0 ]
+then
+	stty erase ^? intr ^c kill ^x
+	set -o vi
+fi
+
+ulimit -c unlimited
+
+#
+# Development stuff
+#
+export WORK=/work
+export DEV=/work/dev

@@ -1,0 +1,87 @@
+# .bash_profile
+#
+# This file is sourced for login shells
+#
+
+if [ -f $HOME/.bash_utils ]; then
+	. $HOME/.bash_utils
+fi
+
+#
+# Personal environment
+#
+export REPLYTO="rolfe@pobox.com"
+
+if [ -t 0 ]
+then
+    # stty erase ^?
+    shopt -s checkwinsize
+fi
+
+if [ -f /lib/libsafe.so.2 ]
+then
+	export LD_PRELOAD=/lib/libsafe.so.2
+fi
+
+append_path MANPATH /usr/share/man
+
+#
+# Java
+#
+### export JAVA_HOME=/usr/java/jdk1.5.0_03
+
+if [ "$JAVA_HOME" ]
+then
+    # Need to cater for the difference between J2SDK and J2RE
+    if [ -d "$JAVA_HOME/jre" ]
+    then
+            jre="$JAVA_HOME/jre"
+    else
+            jre="$JAVA_HOME"
+    fi
+
+    prefix_path PATH $JAVA_HOME/bin
+    prefix_path PATH $jre/bin
+    append_path MANPATH $JAVA_HOME/man
+
+    prefix_path LD_LIBRARY_PATH $jre/lib/i386
+    prefix_path LD_LIBRARY_PATH $jre/lib/i386/client
+    prefix_path LD_LIBRARY_PATH $jre/lib/i386/native_threads
+fi
+
+#
+# @%^&!&*^#&* RedHat...
+#
+unset LC_ALL
+export LC_COLLATE=C
+export LC_CTYPE=en_AU.UTF-8
+
+#
+# Perl
+#
+append_path PERLLIB $HOME/perl
+
+#
+# LLVM
+#
+append_path PATH /opt/llvm/bin
+
+#
+# Internal development
+#
+prefix_path LD_LIBRARY_PATH /work/lib
+
+#
+# SE tools
+#
+###prefix_path PATH /opt/se/bin
+remove_path PATH /opt/se/bin
+prefix_path PATH /opt/work/ocaml/bin
+prefix_path PATH /opt/work/cil/bin
+
+#
+# GNU Radio
+#
+export PYTHONPATH=/usr/local/lib64/python2.7/site-packages
+export PKG_CONFIG_PATH=/usr/local/lib64/pkgconfig
+
